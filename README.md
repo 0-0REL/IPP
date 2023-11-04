@@ -1,2 +1,6 @@
 # IPP
 Practicas de IPP
+
+ATMEGA328P
+
+PIC16F887
