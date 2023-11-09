@@ -78,9 +78,11 @@ Resultado			;Muestra resulatado de la suma
 	movwf	Uni
 	clrf	Dec
 	call	Conv
-	btfss	PORTC,0		;[C0] para reiniciar Pra7
+	btfss	PORTC,0		;[C0] y
 	goto	Resultado
-	goto	Pra7
+	btfss	PORTC,1
+	goto	Resultado	;[C1] para reiniciar Pra7
+	goto	Pra7		;Soltar primero C0 y despues C1
 ;**********SUBRUTINAS**********
 Conv		;Inicia conversion
  	movlw	.10		;Decodificacion en decimal por defecto
@@ -108,7 +110,7 @@ SalDisp		;Config para impresion en 7 seg en hexadecimal
 	DT	0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x67,0xF7,0xFF,0x39,0X3F,0x79,0X71
 	return
 Rtad		;Retardo
-	movlw	.50
+	movlw	.10
 	movwf	Reta
 Rtd
 	decfsz	Reta,F
