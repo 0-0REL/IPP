@@ -105,7 +105,7 @@ Disp
  	movwf	PORTB
  	call	Rtad
 	return	;Termina conversion
-SalDisp		;Config para impresion en 7 seg en hexadecimal
+SalDisp		;Config para impresion (decimal/hexadecimal) en 7 seg
 	addwf	PCL,F
 	DT	0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x67,0xF7,0xFF,0x39,0X3F,0x79,0X71
 	return
