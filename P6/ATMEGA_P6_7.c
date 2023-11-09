@@ -37,7 +37,7 @@ int main(void){
             valores[2] = valores [0] + valores[1];
             while(paso[0] == 0){
                 conv(valores[2]);      //Muestra resulatdo y permite variar la decodificacion del mismo
-                if(AUX == 0x03) paso[0]++;  //D0 para reininicar suma
+                if(AUX == 0x03) paso[0]++;  //D0 y D1 para reininicar suma, soltar D0 y despues D1
             }
             paso[0] = 0;
         }
