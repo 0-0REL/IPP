@@ -33,25 +33,39 @@ void LCD_String (char *str);
 void LCD_String_xy (char row, char pos, char *str);	/* Send string to LCD with xy position */
 void LCD_Clear(void);                  /*Clear LCD Screen*/
 
+void Sald(void);
 void ConvImp(int *unidades, int *decenas, int *centenas, int Tp, int valor);
+void ConvImpValAng(int *uni, int *dec, int *cent, int *mil, int val);
+void PWMCCP1(void);
+void PWMCCP2(void);
+int AngConvDig(void);
+
+float CicTrab = 0;
+int b10PWM = 0;
+int Enter = 0, AntEnt = 0, Ent = 0;
 
 void main(void) {
     char* Prac[] = {"11 E1", "11 E2", "12   ", "13   ", "14   ", "15   ", "16   "};
     char* num[] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
-    int s = 0, SelPrac = 0, AntSel = 0, Enter = 0, AntEnt = 0, Ent = 0;
-    int i = 0, est = 0;
-    int Val1PD03 = 0, Val2PD03 = 0, u = 0, d = 0, c = 0;
-    int CicTrab = 0;
+    int s = 0, SelPrac = 0, AntSel = 0;
+    int Grab = 0, AntGrab = 0;
+    int i = 0, est = 0, n = 0, pso = 0;
+    int AnDigC = 0;
+    int Val1PD03 = 0, Val2PD03 = 0, u = 0, d = 0, c = 0, m = 0;
     float rpmpc = 0, rpm = 0, volt = 0;
-    ANSEL = 0x00;
+    float pos[5] = {0.05, 0.05, 0.05, 0.05, 0.05};
+    ANSEL = 0x01;
     ANSELH = 0x00;
     TRISA = 0xFF;
     TRISC = 0x00;
+    TRISD = 0x0F;
     PORTC = 0x00;
     PORTA = 0x00;
+    PORTD = 0x00;
     LCD_Init();
     while(1){
         while(!Enter){
+            OSCCON = 0x72; //8MHz
             LCD_String_xy(0,0,"Seleccionar prac");
             LCD_String_xy(1,0,"Practica");
             SelPrac = RA1;
@@ -70,6 +84,7 @@ void main(void) {
         }
         switch(s){
             case 0://P11 E1
+                OSCCON = 0x72; //8MHz
                 while(!RA3){//Inicia con boton de arranque
                     /*if(RA4){
                         est = 1;
@@ -94,7 +109,7 @@ void main(void) {
                 }
                 RC4 = 1;//Prende motor 1 en C4
                 LCD_String_xy(0,0,"M1   Encendido");
-                for(i = 0;i<85;i++){
+                for(i = 0;i<1000;i++){
                     if(RA4){//Boton de paro
                         est = 1;
                         break;
@@ -108,7 +123,7 @@ void main(void) {
                 }
                 RC5 = 1;//Prende motor 2 en C5
                 LCD_String_xy(1,0,"M2   Encendido");
-                for(i = 0;i<100;i++){
+                for(i = 0;i<1000;i++){
                     if(RA4){//boton de paro
                         est = 1;
                         break;
@@ -126,6 +141,7 @@ void main(void) {
                 LCD_Clear();
                 break;
             case 1://P11 E2
+                OSCCON = 0x72; //8MHz
                 LCD_String_xy(0,0,"Suma en octal");
                 while(!RA3){//boton arranque para grabar valor 1
                     Val1PD03 = PORTD & 0x0F;
@@ -171,25 +187,26 @@ void main(void) {
                 LCD_Clear();
                 break;
             case 2://P12
+                OSCCON = 0x72; //8MHz
                 PR2 = 124;//Perido para Fpwm 1kHz prescaler 16
-                CCPR2L = 0x00;//ciclo de trabajo 0 al inicio
+                CicTrab = 0;
+                PWMCCP2();
                 T2CON = 0x02;//Prescaler 16
-                CCP2CON = 0x0C;//Activa modo pwm
                 TMR2 = 0;//Timer 2 en 0
                 TMR2ON = 1;//Inicia PWM
                 LCD_Clear();//Limpia pantalla de mesajes anteriores
                 while(Enter){
                     if(RA5){
-                        CicTrab += 1;
-                        if(CicTrab > 125) CicTrab = 125;
+                        CicTrab += 0.01;
+                        if(CicTrab > 1) CicTrab = 1;
                     }
                     if(RA6){
-                        CicTrab -= 1;
+                        CicTrab -= 0.01;
                         if(CicTrab <= 0) CicTrab = 0;
                     }
-                    CCPR2L = CicTrab;
+                    PWMCCP2();
                     LCD_String_xy(0,6,"RPM");
-                    rpm = CicTrab*207/125;//Calculo de RPM del motor
+                    rpm = CicTrab*207;//Calculo de RPM del motor
                     ConvImp(&u, &d, &c, 10, (int)rpm);
                     LCD_String_xy(1,6,num[c]);
                     LCD_String_xy(1,7,num[d]);
@@ -201,15 +218,11 @@ void main(void) {
                     LCD_String_xy(1,2,num[d]);
                     LCD_String_xy(1,3,num[u]);
                     LCD_String_xy(0,11,"Volt");
-                    volt = CicTrab*6/125;//Calculo de voltaje del motor
+                    volt = CicTrab*6;//Calculo de voltaje del motor
                     ConvImp(&u, &d, &c, 10, (int)volt);
                     LCD_String_xy(1,12,num[d]);
                     LCD_String_xy(1,13,num[u]);
-                    Ent = RA2;
-                    if (Ent == 1 && AntEnt == 0){//RA2 (ENTER) seleccionada la practica
-                        Enter = !Enter;
-                    }
-                    AntEnt = Ent;
+                    Sald();
                 }
                 if (Enter == 0){
                     LCD_Clear();//Limpia LCD
@@ -218,7 +231,168 @@ void main(void) {
                 }
                 break;
             case 3://P13
-                
+                OSCCON = 0x32; //500kHz
+                PR2 = 155;//Perido para Fpwm 50Hz prescaler 16
+                CicTrab = 0.05;
+                PWMCCP1();
+                T2CON = 0x02;//Prescaler 16
+                TMR2 = 0;//Timer 2 en 0
+                TMR2ON = 1;//Inicia PWM
+                LCD_Clear();//Limpia pantalla de mesajes anteriores
+                while(Enter){
+                    if(RA5){
+                        CicTrab += 0.01;
+                        if(CicTrab > 0.1) CicTrab = 0.1;//Ciclo de trabajo 10% (90°)
+                        __delay_ms(10);
+                    }
+                    if(RA6){
+                        CicTrab -= 0.01;
+                        if(CicTrab < 0.05) CicTrab = 0.05;//Ciclo de trabajo 5% (-90°)
+                        __delay_ms(10);
+                    }
+                    PWMCCP1();
+                    Grab = RA1;
+                    if (Grab == 1 && AntGrab == 0){//Graba movimientos
+                        pos[n] = CicTrab;
+                        n++;
+                        if (n == 5) n = 0;
+                    }
+                    AntGrab = Grab;
+                    LCD_String_xy(0,0,"%CT");
+                    volt = CicTrab*100;
+                    ConvImp(&u, &d, &c, 10, (int)volt);
+                    LCD_String_xy(0,5,num[d]);
+                    LCD_String_xy(0,6,num[u]);
+                    LCD_String_xy(1,0,"#Pos");
+                    ConvImp(&u, &d, &c, 10, n);
+                    LCD_String_xy(1,5,num[d]);
+                    LCD_String_xy(1,6,num[u]);
+                    if (est == 1){
+                        n++;
+                        if (n == 5){
+                            n = 0;
+                            CicTrab = 0.05;
+                            est = 0;
+                            LCD_String_xy(0,9,"       ");
+                        }
+                        for(i = 0; i<125; i++){
+                            if(RA4){
+                            est = 0;
+                            n = 0;
+                            LCD_String_xy(0,9,"       ");
+                            break;
+                            }
+                            __delay_ms(1);
+                        }
+                    }
+                    SelPrac = RA3;//Play
+                    if (SelPrac == 1 && AntSel == 0){
+                        LCD_String_xy(0,9,"Rep Mov");
+                        n = 0;
+                        est = 1;
+                    }
+                    AntSel = SelPrac;
+                    if (est == 1){
+                        CicTrab = pos[n];
+                    }
+                    Sald();
+                }
+                if (Enter == 0){
+                    LCD_Clear();//Limpia LCD
+                    CCPR1L = 0x08;//PWM en 0
+                    TMR2ON = 0;//Apaga timer 2
+                }
+                break;
+            case 4://P14
+                OSCCON = 0x72; //8MHz
+                pso = 4;
+                LCD_String_xy(0,0,"Motor a Pasos");
+                while(Enter){
+                    if(RA5){
+                        LCD_String_xy(1,0,"Derecha  ");
+                        if(pso == 8) pso = 4;
+                        PORTD = (1<<pso);
+                        __delay_ms(10);
+                        pso++;
+                    }
+                    else if(RA6){
+                        LCD_String_xy(1,0,"Izquierda");
+                        if(pso < 4) pso = 7;
+                        PORTD = (1>>pso--);
+                        __delay_ms(10);
+                    }
+                    Sald();
+                }
+                if (Enter == 0){
+                    LCD_Clear();//Limpia LCD
+                }
+                break;
+            case 5://P15
+                OSCCON = 0x72; //8MHz
+                PR2 = 124;//Perido para Fpwm 1kHz prescaler 16
+                CicTrab = 0;
+                PWMCCP2();
+                T2CON = 0x02;//Prescaler 16
+                TMR2 = 0;//Timer 2 en 0
+                TMR2ON = 1;//Inicia PWM
+                ADCON0 = 0x80;
+                ADCON1 = 0x80;
+                ADRESH = 0;
+                ADRESL = 0;
+                LCD_Clear();//Limpia pantalla de mesajes anteriores
+                while(Enter){
+                    AnDigC = AngConvDig();
+                    CicTrab = AnDigC/1023;
+                    PWMCCP2();
+                    LCD_String_xy(0,0,"ValAng");
+                    ConvImpValAng(&u, &d, &c, &m, AnDigC);
+                    LCD_String_xy(1,0,num[m]);
+                    LCD_String_xy(1,1,num[c]);
+                    LCD_String_xy(1,2,num[d]);
+                    LCD_String_xy(1,3,num[u]);
+                    LCD_String_xy(0,7,"RPM");
+                    rpm = CicTrab*207;//Calculo de RPM del motor
+                    ConvImp(&u, &d, &c, 10, (int)rpm);
+                    LCD_String_xy(1,7,num[c]);
+                    LCD_String_xy(1,8,num[d]);
+                    LCD_String_xy(1,9,num[u]);
+                    LCD_String_xy(0,12,"Volt");
+                    volt = CicTrab*6;//Calculo de voltaje del motor
+                    ConvImp(&u, &d, &c, 10, (int)volt);
+                    LCD_String_xy(1,12,num[d]);
+                    LCD_String_xy(1,13,num[u]);
+                    Sald();
+                }
+                if (Enter == 0){
+                    LCD_Clear();//Limpia LCD
+                    CCPR1L = 0x08;//PWM en 0
+                    TMR2ON = 0;//Apaga timer 2
+                }
+                break;
+            case 6://P16
+                OSCCON = 0x32; //500kHz
+                PR2 = 155;//Perido para Fpwm 50Hz prescaler 16
+                CicTrab = 0.05;
+                PWMCCP1();
+                T2CON = 0x02;//Prescaler 16
+                TMR2 = 0;//Timer 2 en 0
+                TMR2ON = 1;//Inicia PWM
+                ADCON0 = 0x80;
+                ADCON1 = 0x80;
+                ADRESH = 0;
+                ADRESL = 0;
+                LCD_Clear();//Limpia pantalla de mesajes anteriores
+                while(Enter){
+                    AnDigC = AngConvDig();
+                    CicTrab = (AnDigC*0.95/1023) + 0.05;
+                    PWMCCP1();
+                    Sald();
+                }
+                if (Enter == 0){
+                    LCD_Clear();//Limpia LCD
+                    CCPR1L = 0x08;//PWM en 0
+                    TMR2ON = 0;//Apaga timer 2
+                }
                 break;
         }
     }
@@ -231,7 +405,7 @@ void LCD_Command( unsigned char cmnd )
     __delay_us(1);
     LCD_Port &= ~(1<<EN);
     __delay_us(20);
-    LCD_Port = ((0<<RS | 1<<EN)) | (cmnd<<4);
+    LCD_Port = (char)(((0<<RS | 1<<EN)) | (cmnd<<4));
     __delay_us(1);
     LCD_Port &= ~(1<<EN);
     __delay_ms(1);
@@ -242,7 +416,7 @@ void LCD_Char( unsigned char data )
     __delay_us(1);
     LCD_Port &= ~(1<<EN);
     __delay_us(20);
-    LCD_Port = ((1<<RS | 1<<EN)) | (data<<4);
+    LCD_Port = (char)(((1<<RS | 1<<EN)) | (data<<4));
     __delay_us(1);
     LCD_Port &= ~(1<<EN);
     __delay_ms(1);
@@ -281,7 +455,14 @@ void LCD_Clear()
 	__delay_ms(2);
 	LCD_Command (0x80);		/* Cursor at home position */
 }
-/*************************Funcion Conversion a Octal********************************/
+/*************************Funcion Conversion********************************/
+void Sald(void){
+    Ent = RA2;//RA2 (ENTER) Termina la practica seleccionada
+    if (Ent == 1 && AntEnt == 0){
+        Enter = !Enter;
+    }
+    AntEnt = Ent;
+}
 void ConvImp(int *unidades, int *decenas, int *centenas, int Tp, int valor){
     int conv = 8;
     if (Tp == 10){
@@ -294,4 +475,30 @@ void ConvImp(int *unidades, int *decenas, int *centenas, int Tp, int valor){
     *decenas = valor/conv;
     *unidades = valor%conv;    
     return;
+}
+void ConvImpValAng(int *uni, int *dec, int *cent, int *mil, int val){
+    *mil = val/1000;
+    val -= *mil*1000;
+    *cent = val/100;
+    val -= *cent*100;
+    *dec = val/10;
+    *uni = val%10;
+    return;
+}
+void PWMCCP1(void){
+    b10PWM = (int)(CicTrab*4*(PR2+1));
+    CCPR1L = (char)(b10PWM >> 2);//ciclo de trabajo 5% (-90°)
+    CCP1CON = (char)(((b10PWM & 0x03)<< 4) | 0x0C);//Activa modo pwm
+    return;
+}
+void PWMCCP2(void){
+    b10PWM = (int)(CicTrab*4*(PR2+1));
+    CCPR2L = (char)(b10PWM >> 2);//ciclo de trabajo 5% (-90°)
+    CCP2CON = (char)(((b10PWM & 0x03)<< 4) | 0x0C);//Activa modo pwm
+    return;
+}
+int AngConvDig(void){
+    ADCON0 |= ((1<<ADON)|(1<<GO));
+    while(ADCON0bits.GO_nDONE==1);
+    return ((ADRESH*256) | (ADRESL));
 }
