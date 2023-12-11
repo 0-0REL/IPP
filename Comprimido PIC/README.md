@@ -7,10 +7,16 @@ Archivos del comprimido, practicas 11 a  16
   4- Salir de P11 E1 pulsando Enter  
 * Instrucciones P11 E2  
   1- Pulsar SelPrac  
-  2- Pulsar enter  
+  2- Pulsar enter en P11 E2  
   3- Escribir numero con b0 a b3  
   4- Guardar valor 1 pulsando BA  
   5- Escribir valor 2 de la misma forma que en 3  
   6- Guardar valor pulsando BA y despues BP  
   7- Reiniciar suma pulsando SelPrac  
   8- Salir de P11 E2 pulsando Enter  
+* Instrucciones P12  
+  1- Pulsar SelPrac  
+  2- Pulsar Enter en P12  
+  3- Pulsar mas para aumentar RPMs del motor  
+  4- Pulsar menos para reducir RPMs del motor  
+  5- Salir de P12 con Enter  
