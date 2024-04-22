@@ -29,10 +29,13 @@ PROCESSOR 16F887
 	BANKSEL	PORTA
 	clrf	PORTC
 	clrf	PORTD
+ 	clrf	tem
+  	clrf	result
+   	clrf	count
 	main:
     movf    PORTC,W        ; Byte original
     movwf tem        ; Guardar el byte original en un registro temporal
-    clrf result       ; Limpiar el registro donde se guardar· el byte invertido
+    clrf result       ; Limpiar el registro donde se guardar√° el byte invertido
     movlw 0x08        ; Contador para iterar sobre los bits del byte original
     movwf count
     loop:
