@@ -1,3 +1,3 @@
 Hola gay homunek  
-![Mona](https://danbooru.donmai.us/posts/7487801?q=cat_ears+)
-<span>![</span><span>Aquí la descripción de la imagen por si no carga</span><span>]</span><span>(</span><span>https://danbooru.donmai.us/posts/7487801?q=cat_ears+</span><span>)</span>
+
+![Captura de pantalla 2023-11-05 131728](https://github.com/0-0REL/IPP/assets/149843741/06696abd-e884-4f3a-9f72-b3598a6207ed)
